@@ -4,7 +4,7 @@ description: "Trigger: Graphify, Obsidian, project memory, token optimization, r
 license: MIT
 metadata:
   author: MBMJ
-  version: "2.0.0"
+  version: "0.1.0"
 ---
 
 # Skill: project-memory-bridge
