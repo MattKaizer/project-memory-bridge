@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/project-memory-bridge/memory-config.schema.json",
+  "title": "Project Memory Bridge Config",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["project", "memory"],
+  "properties": {
+    "project": {
+      "type": "object",
+      "required": ["name", "root"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "root": { "type": "string", "minLength": 1 },
+        "managed_by": { "type": "string" },
+        "primary_agent": { "type": "string" }
+      }
+    },
+    "memory": {
+      "type": "object",
+      "required": ["engram", "obsidian", "graphify"],
+      "properties": {
+        "engram": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "pointer_mode": {
+              "type": "string",
+              "enum": ["compact", "disabled"],
+              "default": "compact"
+            }
+          }
+        },
+        "obsidian": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "vault_root": { "type": "string" },
+            "project_dir": { "type": "string" }
+          }
+        },
+        "graphify": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "local_output_dir": { "type": "string", "default": "graphify-out" },
+            "install_if_missing": { "type": "boolean", "default": false },
+            "force_graphify_on_init": { "type": "boolean", "default": false }
+          }
+        }
+      }
+    }
+  }
+}
