@@ -28,6 +28,16 @@ def command_exists(name: str) -> bool:
     return shutil.which(name) is not None
 
 
+def confirm(prompt: str) -> bool:
+    if not sys.stdin.isatty():
+        return False
+    try:
+        answer = input(f"{prompt} [y/N]: ").strip().lower()
+    except EOFError:
+        return False
+    return answer in {"y", "yes", "s", "si"}
+
+
 def ensure_python_version() -> None:
     if sys.version_info < (3, 10):
         fail("bootstrap.py requiere Python 3.10+.")
@@ -35,7 +45,7 @@ def ensure_python_version() -> None:
 
 def write_text_if_missing(path: Path, content: str) -> None:
     if not path.exists():
-      path.write_text(content, encoding="utf-8")
+        path.write_text(content, encoding="utf-8")
 
 
 def build_note(title: str, project_name: str, project_root: Path) -> str:
@@ -96,6 +106,60 @@ def ensure_graphify(install_if_missing: bool) -> bool:
     return True
 
 
+def resolve_skill_destination(client: str, scope: str, skill_dir: str | None, project_root: Path) -> Path:
+    if skill_dir:
+        return Path(skill_dir).expanduser().resolve()
+
+    if scope == "project":
+        return project_root / ".agents"
+
+    home_agents = Path.home() / ".agents"
+
+    client_destinations = {
+        "generic": home_agents,
+        "opencode": home_agents,
+        "codex": home_agents,
+    }
+
+    return client_destinations.get(client, home_agents)
+
+
+def ensure_skill_parent(destination_root: Path, client: str, scope: str, auto_yes: bool) -> None:
+    if destination_root.exists():
+        return
+
+    if destination_root.name == ".agents":
+        explanation = (
+            f"La carpeta {destination_root} no existe. Se usa como ubicación genérica para skills/agentes "
+            f"compartidos entre clientes compatibles como {client}."
+        )
+        log(explanation)
+        if not auto_yes and not confirm("¿Querés crearla ahora?"):
+            fail("Instalación de skill cancelada porque ~/.agents no existe.")
+
+    destination_root.mkdir(parents=True, exist_ok=True)
+
+
+def install_skill(skill_repo_root: Path, destination_root: Path) -> Path:
+    skill_target = destination_root / "project-memory-bridge"
+    skill_target.mkdir(parents=True, exist_ok=True)
+
+    shutil.copy2(skill_repo_root / "SKILL.md", skill_target / "SKILL.md")
+
+    for folder_name in ("assets", "references"):
+        src = skill_repo_root / folder_name
+        dst = skill_target / folder_name
+        if dst.exists():
+            shutil.rmtree(dst)
+        shutil.copytree(src, dst)
+
+    readme_src = skill_repo_root / "README.md"
+    if readme_src.exists():
+        shutil.copy2(readme_src, skill_target / "README.md")
+
+    return skill_target
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Bootstrap Project Memory Bridge")
     parser.add_argument("--project-root", default=os.getcwd())
@@ -105,9 +169,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--primary-agent", default="opencode")
     parser.add_argument("--graphify-output-dir", default="graphify-out")
     parser.add_argument("--install-graphify", action="store_true")
+    parser.add_argument("--install-skill", action="store_true")
+    parser.add_argument("--client", default="generic", choices=["generic", "opencode", "codex"])
+    parser.add_argument("--scope", default="global", choices=["global", "project"])
+    parser.add_argument("--skill-dir")
     parser.add_argument("--skip-graphify-update", action="store_true")
     parser.add_argument("--disable-obsidian", action="store_true")
     parser.add_argument("--disable-graphify", action="store_true")
+    parser.add_argument("--yes", action="store_true")
     return parser.parse_args()
 
 
@@ -116,6 +185,7 @@ def main() -> None:
     args = parse_args()
 
     project_root = Path(args.project_root).expanduser().resolve()
+    skill_repo_root = Path(__file__).resolve().parent.parent
     if not project_root.is_dir():
         fail(f"Project root no existe: {project_root}")
 
@@ -131,6 +201,7 @@ def main() -> None:
     config_path = atl_dir / "memory-config.json"
     graphify_output_path = project_root / args.graphify_output_dir
     last_run_note = project_dir / "02_Graphify" / "last-run.md"
+    skill_install_path: Path | None = None
 
     log("Step 1/6: verifying Gentle-AI-oriented target repository")
 
@@ -241,11 +312,20 @@ Graphify update completed successfully during bootstrap.
     elif graphify_enabled:
         log("Graphify sigue no disponible; config escrito con available=false")
 
+    if args.install_skill:
+        log("Step 7/7: installing skill files for agent runtime")
+        destination_root = resolve_skill_destination(args.client, args.scope, args.skill_dir, project_root)
+        ensure_skill_parent(destination_root, args.client, args.scope, args.yes)
+        skill_install_path = install_skill(skill_repo_root, destination_root)
+        log(f"Skill instalada en: {skill_install_path}")
+
     log(f"Config: {config_path}")
     if obsidian_enabled:
         log(f"Obsidian project dir: {project_dir}")
     if graphify_enabled:
         log(f"Graphify output dir: {graphify_output_path}")
+    if skill_install_path:
+        log(f"Skill runtime path: {skill_install_path}")
     log("Done")
 
 

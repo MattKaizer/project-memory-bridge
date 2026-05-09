@@ -4,7 +4,7 @@
   <img src="assets/logo.svg" alt="Project Memory Bridge logo" width="180" />
 </p>
 
-<p align="center"><strong>Una skill liviana para conectar Engram, Graphify y Obsidian sin romper el flujo normal del agente.</strong></p>
+<p align="center"><strong>Persistent-memory bridge for Gentle-AI workflows using Engram, Graphify, and Obsidian.</strong></p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-0.1.0-22C55E" alt="Version 0.1.0" />
@@ -12,99 +12,167 @@
   <img src="https://img.shields.io/badge/status-beta-F59E0B" alt="Beta status" />
 </p>
 
+> `project-memory-bridge` is a **companion layer for Gentle-AI**. It does not replace Gentle-AI or Engram. It adds structured project memory, durable notes, and Graphify-powered repository discovery on top of the normal workflow.
+
+## Table of Contents
+
+- [What is this?](#what-is-this)
+- [Quick Start](#quick-start)
+- [What lives where](#what-lives-where)
+- [Supported bootstrap paths](#supported-bootstrap-paths)
+- [Bootstrap architecture](#bootstrap-architecture)
+- [Repository structure](#repository-structure)
+- [Configuration](#configuration)
+- [Operation modes](#operation-modes)
+- [When to use it](#when-to-use-it)
+- [Documentation](#documentation)
+- [GitHub metadata](#github-metadata)
+- [License](#license)
+
 ---
 
-## GitHub quick metadata
+## What is this?
 
-**About**
+Project Memory Bridge exists to stop agents from **rediscovering the same large repository from scratch** every time they return.
 
-```text
-Persistent-memory bridge for Gentle-AI workflows using Engram, Graphify, and Obsidian.
-```
+It combines four layers with clear responsibilities:
 
-**Topics**
-
-```text
-ai llm agent memory engram obsidian graphify sdd developer-tools knowledge-management repository-analysis prompt-engineering
-```
-
-**Current version**
-
-```text
-v0.1.0
-```
-
-## Qué es
-
-`project-memory-bridge` agrega una capa de memoria persistente para repos medianos o grandes.
-
-Funciona **en conjunto con Gentle-AI**. No es un reemplazo del framework ni de Engram: extiende el workflow normal con memoria estructural y conocimiento durable.
-
-La idea es simple:
-
-- **Engram** sigue siendo la memoria operativa principal.
-- **Graphify** ayuda a entender estructura y relaciones del repo.
-- **Obsidian** guarda conocimiento durable: arquitectura, decisiones, troubleshooting y contexto de trabajo.
-
-El objetivo NO es guardar todo.
-El objetivo es **dejar de redescubrir el repo desde cero** cada vez que el agente vuelve a trabajar.
-
-## Por qué existe
-
-Sin una capa así, el agente suele gastar tokens en:
-
-- reabrir archivos estructurales una y otra vez
-- reconstruir arquitectura desde código crudo
-- perder contexto entre sesiones largas
-- repetir onboarding técnico
-
-Esta skill reduce ese costo al dar un **orden de lectura más barato**:
-
-1. config
-2. Engram
-3. notas de Obsidian
-4. reporte de Graphify
-5. código fuente puntual
-
-## Cuándo conviene
-
-Usala cuando:
-
-- hacés onboarding de un repo existente
-- querés correr `sdd-init` o planning serio en un repo grande
-- necesitás revisar arquitectura o bounded contexts
-- querés persistir contexto durable fuera del prompt runtime
-
-No la uses para:
-
-- cambios chicos en 1 archivo
-- fixes locales ya conocidos
-- preguntas conceptuales sin contexto del repo
-
-## Qué resuelve
-
-| Capa | Rol |
+| Layer | Role |
 |---|---|
-| Engram | Memoria operativa y continuidad de sesión |
-| Graphify | Estructura del repo, relaciones y navegación |
-| Obsidian | Conocimiento durable del proyecto |
-| Código fuente | Fuente de verdad final |
+| **Gentle-AI** | Main workflow, orchestration, skills, SDD behavior |
+| **Engram** | Operational memory and session continuity |
+| **Graphify** | Repository structure, relationships, discovery |
+| **Obsidian** | Durable project knowledge, notes, architecture history |
 
-## Filosofía
+The goal is NOT “store everything”.
+The goal is **spend tokens on reasoning, not on repeated repo reconstruction**.
 
-Esta skill está diseñada para ser **LLM-first**:
+---
 
-- `SKILL.md` corto y accionable
-- detalles pesados fuera del runtime principal
-- assets y references para todo lo extenso
-- cero interferencia con Engram
+## Quick Start
 
-## Estructura del repo
+### 1. Prerequisites
+
+- **Gentle-AI** already installed and working
+- **Engram** available inside that workflow
+- **Python 3.10+** for the bootstrap core
+- **Graphify** if you want structural repository analysis
+- **Obsidian** if you want local durable notes
+
+### 2. Run bootstrap
+
+macOS / Linux:
+
+```bash
+/ruta/a/project-memory-bridge/scripts/bootstrap.sh \
+  --primary-agent opencode \
+  --install-graphify \
+  --install-skill \
+  --client opencode
+```
+
+Windows PowerShell:
+
+```powershell
+.\scripts\bootstrap.ps1 --primary-agent opencode --install-graphify --install-skill --client opencode
+```
+
+### 3. Use the skill
+
+1. Install the skill in your agent runtime.
+2. Bootstrap the target repository.
+3. Activate the skill during onboarding, architecture review, or `sdd-init`.
+4. Read cheap memory first, then open raw code only when needed.
+
+---
+
+## What lives where
+
+| Component | Responsibility |
+|---|---|
+| **This repo** | Skill contract, bootstrap scripts, config schema, note templates |
+| **Gentle-AI** | Agent behavior, persona, SDD orchestration, normal Engram usage |
+| **Target repo** | `.atl/memory-config.json`, `graphify-out/`, local project state |
+| **Obsidian vault** | Durable notes, architecture summaries, project memory |
+
+This repo is a **bridge layer**, not a standalone assistant framework.
+
+---
+
+## Supported bootstrap paths
+
+| Platform | Entry point | Python handling |
+|---|---|---|
+| macOS | `scripts/bootstrap.sh` | Detects Python 3.10+, installs via Homebrew if missing |
+| Linux | `scripts/bootstrap.sh` | Detects Python 3.10+, asks for manual install if missing |
+| Windows | `scripts/bootstrap.ps1` | Detects Python 3.10+, installs via `winget` or `scoop` if possible |
+| Core logic | `scripts/bootstrap.py` | Shared bootstrap behavior across platforms |
+
+---
+
+## Bootstrap architecture
+
+The bootstrap is intentionally split in two layers:
+
+- **platform launcher** → obtains Python 3.10+
+- **Python core** → performs the real bootstrap
+
+### Why this split matters
+
+A single `.py` file is cleaner and more maintainable for shared logic.
+
+But a pure Python entrypoint fails immediately if Python is missing.
+
+So the launchers solve the runtime dependency first, then call the core.
+
+### Real dependency order
+
+1. launcher resolves **Python 3.10+**
+2. `bootstrap.py` verifies the target repo
+3. creates `.atl/`
+4. ensures **graphifyy** via `uv`, `pipx`, or `pip`
+5. runs `graphify install`
+6. writes `.atl/memory-config.json`
+7. creates Obsidian folders and seed notes
+8. runs `graphify update .` if enabled
+9. optionally installs the skill into the agent runtime
+
+This order matters because the final config should reflect **real available capabilities**, not wishful ones.
+
+### Skill installation targets
+
+If you pass `--install-skill`, the bootstrap can also copy the skill runtime files.
+
+Resolution order:
+
+1. `--skill-dir` if you provide it
+2. client-aware destination if supported
+3. `~/.agents` as generic global fallback
+4. `<target-repo>/.agents` when `--scope project`
+
+Today the generic fallback is the safest default for clients like **OpenCode** and **Codex**.
+
+If `~/.agents` does not exist, the script becomes **interactive by default**:
+
+- it explains what `~/.agents` is for
+- asks whether you want to create it
+- creates it only if you confirm
+
+If you want non-interactive behavior, pass:
+
+```bash
+--yes
+```
+
+---
+
+## Repository structure
 
 ```text
 project-memory-bridge/
 ├── SKILL.md
 ├── README.md
+├── RELEASE_NOTES_v0.1.0.md
 ├── assets/
 │   ├── logo.svg
 │   └── memory-config.schema.json
@@ -117,114 +185,23 @@ project-memory-bridge/
     └── obsidian-templates.md
 ```
 
-## Config mínima
+---
 
-La skill espera este archivo:
+## Configuration
+
+The expected config file is:
 
 ```text
 .atl/memory-config.json
 ```
 
-El esquema base vive en:
+The lightweight schema lives in:
 
 ```text
 assets/memory-config.schema.json
 ```
 
-## Modos de operación
-
-| Modo | Qué hace |
-|---|---|
-| `bootstrap` | Crea config y base mínima de memoria |
-| `hydrate` | Llena notas con conocimiento real del repo |
-| `consume` | Usa memoria existente sin repoblarla |
-| `update` | Actualiza solo conocimiento durable afectado |
-
-## Beneficio real
-
-Si la skill es corta y se activa bien, **sí puede ahorrar tokens**.
-
-Si la convertís en un documento gigante, pasa lo contrario: el costo fijo de cargar la skill supera el ahorro.
-
-Por eso esta versión separa:
-
-- **runtime contract** en `SKILL.md`
-- **detalle operativo** en `references/`
-- **schema/plantillas** en `assets/`
-
-## Prerrequisitos
-
-- **Gentle-AI** ya instalado y funcionando
-- **Engram** disponible dentro de ese workflow
-- **Obsidian** si querés memoria durable local
-- **Python 3.10+** para ejecutar el core del bootstrap
-- **Graphify** si querés análisis estructural automatizado
-
-## Arquitectura del bootstrap
-
-El core ahora vive en:
-
-```text
-scripts/bootstrap.py
-```
-
-Pero NO me comí la curva de pensar “si no hay Python, igual va a correr”. No. Un `.py` solo depende de Python.
-
-Por eso dejé launchers finos por plataforma:
-
-- `scripts/bootstrap.sh` → macOS/Linux
-- `scripts/bootstrap.ps1` → Windows PowerShell
-
-Esos launchers primero resuelven Python 3.10+ y recién después invocan `bootstrap.py`.
-
-## Instalación y bootstrap
-
-La skill **no instala sola** Gentle-AI, Engram, Graphify ni Obsidian.
-
-Para eso existe este bootstrap multiplataforma:
-
-```bash
-scripts/bootstrap.py
-```
-
-### Orden real del bootstrap
-
-El flujo real respeta dependencias reales en este orden:
-
-1. launcher detecta o instala **Python 3.10+**
-2. `bootstrap.py` verifica el repo objetivo
-3. crea `.atl/`
-4. verifica/instala **graphifyy** con `uv`, `pipx` o `pip`
-5. corre `graphify install`
-6. genera `.atl/memory-config.json`
-7. crea directorios y notas de Obsidian usando ese config
-8. corre `graphify update .` si corresponde
-
-Primero se resuelve Python, después Graphify, y recién después se escribe el config final con el estado real de disponibilidad. Eso evita declarar capacidades que no existen todavía.
-
-### Uso básico
-
-Desde el repo que querés preparar en macOS/Linux:
-
-```bash
-/ruta/a/project-memory-bridge/scripts/bootstrap.sh
-```
-
-En Windows PowerShell:
-
-```powershell
-.\scripts\bootstrap.ps1
-```
-
-### Uso recomendado
-
-```bash
-/ruta/a/project-memory-bridge/scripts/bootstrap.sh \
-  --primary-agent opencode \
-  --install-graphify
-```
-
-### Opciones útiles
+### Common options
 
 ```bash
 --project-root PATH
@@ -234,25 +211,85 @@ En Windows PowerShell:
 --primary-agent NAME
 --graphify-output-dir DIR
 --install-graphify
+--install-skill
+--client generic|opencode|codex
+--scope global|project
+--skill-dir PATH
 --skip-graphify-update
 --disable-obsidian
 --disable-graphify
+--yes
 ```
 
-## Uso de la skill
+---
 
-1. Instalá la skill en tu runtime global o por proyecto.
-2. Corré `scripts/bootstrap.sh` o `scripts/bootstrap.ps1` en el repo objetivo.
-3. Activala en onboarding, architecture review o SDD init.
-4. Leé primero memoria barata; abrí código crudo solo cuando haga falta.
+## Operation modes
 
-## Roadmap sugerido
+| Mode | What it does |
+|---|---|
+| `bootstrap` | Creates config and minimum memory foundations |
+| `hydrate` | Fills notes with real project knowledge |
+| `consume` | Uses existing memory without repopulating it |
+| `update` | Refreshes only durable knowledge affected by a change |
 
-- agregar ejemplos de integración con orchestrators
-- sumar plantillas de notas por tipo de proyecto
-- incorporar validación automática del config
-- medir ahorro real de tokens en casos de uso repetidos
+The skill is designed to stay **LLM-first**:
 
-## Licencia
+- short runtime contract in `SKILL.md`
+- heavier detail moved to `references/`
+- schema and install artifacts moved to `assets/` and `scripts/`
+
+---
+
+## When to use it
+
+Use it when:
+
+- onboarding an existing repository
+- running `sdd-init` or planning on a medium/large repo
+- reviewing architecture or bounded contexts
+- reducing repeated context rebuilds across sessions
+
+Do **not** use it for:
+
+- tiny one-file edits
+- already-known local fixes
+- conceptual questions detached from the repository
+
+---
+
+## Documentation
+
+| Document | Purpose |
+|---|---|
+| `SKILL.md` | Runtime contract for the skill |
+| `references/operating-model.md` | Bootstrap, hydrate, consume, update model |
+| `references/obsidian-templates.md` | Suggested durable note structure |
+| `RELEASE_NOTES_v0.1.0.md` | First public beta release notes |
+
+---
+
+## GitHub metadata
+
+**About**
+
+```text
+Persistent-memory bridge for Gentle-AI workflows using Engram, Graphify, and Obsidian.
+```
+
+**Topics**
+
+```text
+ai llm agent memory engram obsidian graphify sdd developer-tools knowledge-management repository-analysis prompt-engineering gentle-ai
+```
+
+**Current version**
+
+```text
+v0.1.0
+```
+
+---
+
+## License
 
 MIT
