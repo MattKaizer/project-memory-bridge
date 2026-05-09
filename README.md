@@ -25,6 +25,7 @@
 - [Configuration](#configuration)
 - [Operation modes](#operation-modes)
 - [When to use it](#when-to-use-it)
+- [Credits](#credits)
 - [Documentation](#documentation)
 - [GitHub metadata](#github-metadata)
 - [License](#license)
@@ -96,6 +97,21 @@ Windows PowerShell:
 | **Obsidian vault** | Durable notes, architecture summaries, project memory |
 
 This repo is a **bridge layer**, not a standalone assistant framework.
+
+---
+
+## Credits
+
+Project Memory Bridge builds on top of the work and ideas behind these tools and projects:
+
+| Project | Role in this workflow |
+|---|---|
+| **[Gentle-AI](https://github.com/Gentleman-Programming/gentle-ai)** | Base workflow, agent behavior, persona, SDD, and orchestration |
+| **Graphify / graphifyy** | Repository graph generation and structural discovery |
+| **Engram** | Operational memory and continuity across sessions |
+| **[Obsidian](https://obsidian.md/)** | Durable local project knowledge and notes |
+
+This repository is meant to **extend** those workflows, not to replace or erase their contribution.
 
 ---
 
