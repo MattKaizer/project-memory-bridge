@@ -1,0 +1,20 @@
+{
+  "scenarios": [
+    {
+      "name": "repo-onboarding",
+      "baseline": [
+        "README.md",
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "docs/**/*.md"
+      ],
+      "memory_first": [
+        ".atl/memory-config.json",
+        "graphify-out/GRAPH_REPORT.md",
+        "notes/00_Project_Index.md",
+        "notes/01_Current_State.md",
+        "notes/03_Architecture_Summary.md"
+      ]
+    }
+  ]
+}

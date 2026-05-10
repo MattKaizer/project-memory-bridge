@@ -24,6 +24,7 @@
 - [Repository structure](#repository-structure)
 - [Configuration](#configuration)
 - [Operation modes](#operation-modes)
+- [Token benchmark](#token-benchmark)
 - [When to use it](#when-to-use-it)
 - [Credits](#credits)
 - [Documentation](#documentation)
@@ -122,6 +123,57 @@ scripts\bootstrap.cmd --primary-agent opencode --install-gentle-ai --install-gra
 5. Open your target repo in your AI client.
 6. Activate the skill during onboarding, architecture review, or `sdd-init`.
 7. Read cheap memory first, then open raw code only when needed.
+
+---
+
+## Token benchmark
+
+If you are not sure the project saves context, do not trust it blindly. Measure it.
+
+Run the benchmark script against a real target repository:
+
+```bash
+python3 scripts/benchmark_memory_savings.py \
+  --repo-root /ruta/al/repo-objetivo \
+  --config benchmarks/example-benchmark.json \
+  --details
+```
+
+What it compares:
+
+- **baseline** → raw rediscovery files
+- **memory_first** → config + Graphify + durable notes
+
+What it reports:
+
+- number of files
+- total lines
+- total bytes
+- estimated tokens
+
+Interpretation:
+
+- if `memory_first` is significantly smaller, good
+- if it is similar, the bridge may not justify the complexity
+- if it is larger, do **not** use the setup as-is
+
+Important limitation:
+
+- this does **not** measure billed provider tokens directly
+- it measures a **reproducible proxy of loaded context**
+- that is enough to decide whether the strategy is directionally good or bad
+
+Recommended validation scenarios:
+
+1. repo onboarding
+2. architecture review
+3. planning / `sdd-init`
+
+If it does not improve those scenarios, the project is not delivering on its promise.
+
+Full guide:
+
+- `docs/token-benchmark.md`
 
 ---
 
@@ -347,6 +399,7 @@ Do **not** use it for:
 | `references/operating-model.md` | Bootstrap, hydrate, consume, update model |
 | `references/obsidian-templates.md` | Suggested durable note structure |
 | `RELEASE_NOTES_v0.1.0.md` | First public beta release notes |
+| `docs/token-benchmark.md` | How to validate real context savings |
 
 ---
 
