@@ -277,9 +277,10 @@ If you pass `--install-skill`, the bootstrap can also copy the skill runtime fil
 Resolution order:
 
 1. `--skill-dir` if you provide it
-2. client-aware destination if supported
-3. `~/.agents` as generic global fallback
-4. `<target-repo>/.agents` when `--scope project`
+2. `~/.agents/skills` if that folder already exists
+3. client-aware destination if supported
+4. `~/.agents` as generic global fallback
+5. `<target-repo>/.agents` when `--scope project`
 
 Today the generic fallback is the safest default for clients like **OpenCode** and **Codex**.
 

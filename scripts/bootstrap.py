@@ -187,6 +187,10 @@ def resolve_skill_destination(client: str, scope: str, skill_dir: str | None, pr
         return project_root / ".agents"
 
     home_agents = Path.home() / ".agents"
+    home_agents_skills = home_agents / "skills"
+
+    if home_agents_skills.exists():
+        return home_agents_skills
 
     client_destinations = {
         "generic": home_agents,
