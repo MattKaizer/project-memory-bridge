@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+case "$(uname -s)" in
+  Darwin|Linux)
+    exec "$SCRIPT_DIR/bootstrap.sh" "$@"
+    ;;
+  MINGW*|MSYS*|CYGWIN*)
+    if command -v powershell.exe >/dev/null 2>&1; then
+      exec powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$SCRIPT_DIR/bootstrap.ps1" "$@"
+    fi
+    printf '[project-memory-bridge] ERROR: No encontré powershell.exe para delegar a bootstrap.ps1\n' >&2
+    exit 1
+    ;;
+  *)
+    printf '[project-memory-bridge] ERROR: Sistema operativo no soportado por el launcher principal: %s\n' "$(uname -s)" >&2
+    exit 1
+    ;;
+esac

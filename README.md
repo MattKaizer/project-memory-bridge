@@ -54,36 +54,72 @@ The goal is **spend tokens on reasoning, not on repeated repo reconstruction**.
 
 ### 1. Prerequisites
 
-- **Gentle-AI** already installed and working
-- **Engram** available inside that workflow
 - **Python 3.10+** for the bootstrap core
 - **Graphify** if you want structural repository analysis
 - **Obsidian** if you want local durable notes
 
+> **Important:** this project depends on **Gentle-AI**. The bootstrap now checks that dependency interactively. If `gentle-ai` is missing, it explains why it is required and can install it with the recommended method for your operating system. **Engram comes with Gentle-AI**, so you do not need to install Engram separately in the normal path.
+
 ### 2. Run bootstrap
 
-macOS / Linux:
+Choose the launcher that matches your environment.
+
+#### macOS / Linux / Git Bash / MSYS / Cygwin
 
 ```bash
-/ruta/a/project-memory-bridge/scripts/bootstrap.sh \
+/ruta/a/project-memory-bridge/scripts/bootstrap
+```
+
+This launcher auto-detects the OS and delegates to the right wrapper.
+
+Recommended example:
+
+```bash
+/ruta/a/project-memory-bridge/scripts/bootstrap \
   --primary-agent opencode \
+  --install-gentle-ai \
   --install-graphify \
   --install-skill \
   --client opencode
 ```
 
-Windows PowerShell:
+#### Windows PowerShell
 
 ```powershell
-.\scripts\bootstrap.ps1 --primary-agent opencode --install-graphify --install-skill --client opencode
+.\scripts\bootstrap.ps1 `
+  --primary-agent opencode `
+  --install-gentle-ai `
+  --install-graphify `
+  --install-skill `
+  --client opencode
 ```
+
+#### Windows CMD
+
+```bat
+scripts\bootstrap.cmd --primary-agent opencode --install-gentle-ai --install-graphify --install-skill --client opencode
+```
+
+#### Delegation flow
+
+- POSIX shells → `bootstrap`
+- Windows PowerShell → `bootstrap.ps1`
+- Windows CMD / double-click style entry → `bootstrap.cmd`
+
+- macOS / Linux → `bootstrap` → `bootstrap.sh` → `bootstrap.py`
+- Git Bash / MSYS / Cygwin → `bootstrap` → `bootstrap.ps1` → `bootstrap.py`
+- Windows PowerShell → `bootstrap.ps1` → `bootstrap.py`
+- Windows CMD → `bootstrap.cmd` → `bootstrap.ps1` → `bootstrap.py`
 
 ### 3. Use the skill
 
-1. Install the skill in your agent runtime.
-2. Bootstrap the target repository.
-3. Activate the skill during onboarding, architecture review, or `sdd-init`.
-4. Read cheap memory first, then open raw code only when needed.
+1. Run the bootstrap launcher for your environment.
+2. Let it install or verify **Gentle-AI** if needed.
+3. Let it install or verify **Graphify** if you requested it.
+4. Let it copy the skill into the runtime if you passed `--install-skill`.
+5. Open your target repo in your AI client.
+6. Activate the skill during onboarding, architecture review, or `sdd-init`.
+7. Read cheap memory first, then open raw code only when needed.
 
 ---
 
@@ -119,9 +155,11 @@ This repository is meant to **extend** those workflows, not to replace or erase 
 
 | Platform | Entry point | Python handling |
 |---|---|---|
+| Main launcher (POSIX) | `scripts/bootstrap` | Detects OS and delegates to the right wrapper |
 | macOS | `scripts/bootstrap.sh` | Detects Python 3.10+, installs via Homebrew if missing |
 | Linux | `scripts/bootstrap.sh` | Detects Python 3.10+, asks for manual install if missing |
-| Windows | `scripts/bootstrap.ps1` | Detects Python 3.10+, installs via `winget` or `scoop` if possible |
+| Windows PowerShell | `scripts/bootstrap.ps1` | Detects Python 3.10+, installs via `winget` or `scoop` if possible |
+| Windows CMD | `scripts/bootstrap.cmd` | Delegates to PowerShell launcher |
 | Core logic | `scripts/bootstrap.py` | Shared bootstrap behavior across platforms |
 
 ---
@@ -132,6 +170,12 @@ The bootstrap is intentionally split in two layers:
 
 - **platform launcher** → obtains Python 3.10+
 - **Python core** → performs the real bootstrap
+
+The **central logic entrypoint** is still `scripts/bootstrap.py`.
+
+The shell and PowerShell launchers exist only to make sure the Python runtime is available before delegating to that core.
+
+For everyday usage, the launcher layer is now complete enough to present a clear main path on both POSIX and Windows environments.
 
 ### Why this split matters
 
@@ -144,16 +188,33 @@ So the launchers solve the runtime dependency first, then call the core.
 ### Real dependency order
 
 1. launcher resolves **Python 3.10+**
-2. `bootstrap.py` verifies the target repo
-3. creates `.atl/`
-4. ensures **graphifyy** via `uv`, `pipx`, or `pip`
-5. runs `graphify install`
-6. writes `.atl/memory-config.json`
-7. creates Obsidian folders and seed notes
-8. runs `graphify update .` if enabled
-9. optionally installs the skill into the agent runtime
+2. `bootstrap.py` checks **Gentle-AI**
+3. if missing, it explains the dependency and can install it interactively
+4. creates `.atl/`
+5. ensures **graphifyy** via `uv`, `pipx`, or `pip`
+6. runs `graphify install`
+7. writes `.atl/memory-config.json`
+8. creates Obsidian folders and seed notes
+9. runs `graphify update .` if enabled
+10. optionally installs the skill into the agent runtime
 
 This order matters because the final config should reflect **real available capabilities**, not wishful ones.
+
+### Gentle-AI installation path
+
+If `gentle-ai` is missing, the bootstrap can suggest or run the official installation path:
+
+| Platform | Preferred path |
+|---|---|
+| macOS | `brew tap Gentleman-Programming/homebrew-tap && brew install gentle-ai` |
+| Linux | Homebrew if available, otherwise official install script |
+| Windows | `scoop install gentle-ai`, otherwise official PowerShell installer |
+
+If you want it to install without asking, pass:
+
+```bash
+--install-gentle-ai --yes
+```
 
 ### Skill installation targets
 
@@ -193,6 +254,8 @@ project-memory-bridge/
 │   ├── logo.svg
 │   └── memory-config.schema.json
 ├── scripts/
+│   ├── bootstrap
+│   ├── bootstrap.cmd
 │   ├── bootstrap.py
 │   ├── bootstrap.sh
 │   └── bootstrap.ps1
@@ -226,6 +289,7 @@ assets/memory-config.schema.json
 --project-dir PATH
 --primary-agent NAME
 --graphify-output-dir DIR
+--install-gentle-ai
 --install-graphify
 --install-skill
 --client generic|opencode|codex

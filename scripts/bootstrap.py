@@ -24,6 +24,10 @@ def run(command: list[str], cwd: Path | None = None) -> None:
     subprocess.run(command, cwd=str(cwd) if cwd else None, check=True)
 
 
+def run_shell(command: str) -> None:
+    subprocess.run(command, shell=True, check=True)
+
+
 def command_exists(name: str) -> bool:
     return shutil.which(name) is not None
 
@@ -106,6 +110,75 @@ def ensure_graphify(install_if_missing: bool) -> bool:
     return True
 
 
+def detect_platform() -> str:
+    system = platform.system().lower()
+    if system == "darwin":
+        return "macos"
+    if system == "windows":
+        return "windows"
+    if system == "linux":
+        return "linux"
+    return system
+
+
+def install_gentle_ai(target_platform: str) -> None:
+    if target_platform in {"macos", "linux"}:
+        if command_exists("brew"):
+            log("Instalando Gentle-AI con Homebrew...")
+            run(["brew", "tap", "Gentleman-Programming/homebrew-tap"])
+            run(["brew", "install", "gentle-ai"])
+            return
+
+        log("Homebrew no está disponible. Usando el script oficial de instalación de Gentle-AI...")
+        run_shell("curl -fsSL https://raw.githubusercontent.com/Gentleman-Programming/gentle-ai/main/scripts/install.sh | bash")
+        return
+
+    if target_platform == "windows":
+        if command_exists("scoop"):
+            log("Instalando Gentle-AI con Scoop...")
+            run(["scoop", "bucket", "add", "gentleman", "https://github.com/Gentleman-Programming/scoop-bucket"])
+            run(["scoop", "install", "gentle-ai"])
+            return
+
+        log("Scoop no está disponible. Usando el script oficial de instalación de Gentle-AI para PowerShell...")
+        run(
+            [
+                "powershell",
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                "irm https://raw.githubusercontent.com/Gentleman-Programming/gentle-ai/main/scripts/install.ps1 | iex",
+            ]
+        )
+        return
+
+    fail(f"No tengo una ruta de instalación automática de Gentle-AI para la plataforma: {target_platform}")
+
+
+def ensure_gentle_ai(install_if_missing: bool, auto_yes: bool) -> None:
+    if command_exists("gentle-ai"):
+        return
+
+    target_platform = detect_platform()
+    log("Project Memory Bridge depende de Gentle-AI. Engram viene dentro de ese stack.")
+
+    if not install_if_missing:
+        if auto_yes:
+            fail("Gentle-AI no está instalado. Reintentá con --install-gentle-ai o instalalo manualmente.")
+
+        wants_install = confirm("No encontré 'gentle-ai'. ¿Querés instalarlo ahora con el método recomendado para tu sistema?")
+        if not wants_install:
+            fail("Bootstrap cancelado porque Gentle-AI es un prerequisito obligatorio.")
+    else:
+        log("No encontré 'gentle-ai'. Voy a instalarlo porque pasaste --install-gentle-ai.")
+
+    install_gentle_ai(target_platform)
+
+    if not command_exists("gentle-ai"):
+        fail("La instalación de Gentle-AI terminó pero el comando 'gentle-ai' sigue sin estar disponible.")
+
+
 def resolve_skill_destination(client: str, scope: str, skill_dir: str | None, project_root: Path) -> Path:
     if skill_dir:
         return Path(skill_dir).expanduser().resolve()
@@ -168,6 +241,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--project-dir")
     parser.add_argument("--primary-agent", default="opencode")
     parser.add_argument("--graphify-output-dir", default="graphify-out")
+    parser.add_argument("--install-gentle-ai", action="store_true")
     parser.add_argument("--install-graphify", action="store_true")
     parser.add_argument("--install-skill", action="store_true")
     parser.add_argument("--client", default="generic", choices=["generic", "opencode", "codex"])
@@ -203,19 +277,20 @@ def main() -> None:
     last_run_note = project_dir / "02_Graphify" / "last-run.md"
     skill_install_path: Path | None = None
 
-    log("Step 1/6: verifying Gentle-AI-oriented target repository")
+    log("Step 1: ensuring Gentle-AI dependency")
+    ensure_gentle_ai(install_if_missing=args.install_gentle_ai, auto_yes=args.yes)
 
-    log("Step 2/6: creating .atl foundation")
+    log("Step 2: creating .atl foundation")
     atl_dir.mkdir(parents=True, exist_ok=True)
 
-    log("Step 3/6: ensuring Graphify runtime prerequisites")
+    log("Step 3: ensuring Graphify runtime prerequisites")
     graphify_available = False
     if graphify_enabled:
         graphify_available = ensure_graphify(install_if_missing=args.install_graphify)
     else:
         log("Graphify deshabilitado por flag")
 
-    log("Step 4/6: writing memory-config.json")
+    log("Step 4: writing memory-config.json")
     config = {
         "project": {
             "name": project_name,
@@ -246,7 +321,7 @@ def main() -> None:
     config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
 
     if obsidian_enabled:
-        log("Step 5/6: creating Obsidian directories and seed notes from config")
+        log("Step 5: creating Obsidian directories and seed notes from config")
         for path in [
             project_dir,
             project_dir / "01_Architecture",
@@ -285,9 +360,9 @@ Graphify has not run yet, or no successful run has been recorded.
 """,
         )
     else:
-        log("Step 5/6: skipping Obsidian setup because it was disabled")
+        log("Step 5: skipping Obsidian setup because it was disabled")
 
-    log("Step 6/6: refreshing graph if available and enabled")
+    log("Step 6: refreshing graph if available and enabled")
     if graphify_enabled and graphify_available:
         graphify_output_path.mkdir(parents=True, exist_ok=True)
         if run_graphify_update:
@@ -313,7 +388,7 @@ Graphify update completed successfully during bootstrap.
         log("Graphify sigue no disponible; config escrito con available=false")
 
     if args.install_skill:
-        log("Step 7/7: installing skill files for agent runtime")
+        log("Step 7: installing skill files for agent runtime")
         destination_root = resolve_skill_destination(args.client, args.scope, args.skill_dir, project_root)
         ensure_skill_parent(destination_root, args.client, args.scope, args.yes)
         skill_install_path = install_skill(skill_repo_root, destination_root)
