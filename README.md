@@ -60,6 +60,8 @@ The goal is **spend tokens on reasoning, not on repeated repo reconstruction**.
 
 > **Important:** this project depends on **Gentle-AI**. The bootstrap now checks that dependency interactively. If `gentle-ai` is missing, it explains why it is required and can install it with the recommended method for your operating system. **Engram comes with Gentle-AI**, so you do not need to install Engram separately in the normal path.
 
+> **Obsidian note:** the bootstrap can create the project note structure and configured vault paths, but it does **not** install the Obsidian application itself. If you want the Obsidian layer, install Obsidian first and then run the bootstrap.
+
 ### 2. Run bootstrap
 
 Choose the launcher that matches your environment.
