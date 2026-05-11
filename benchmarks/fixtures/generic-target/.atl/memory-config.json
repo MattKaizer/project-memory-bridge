@@ -1,0 +1,26 @@
+{
+  "project": {
+    "name": "generic-target",
+    "root": "."
+  },
+  "memory": {
+    "engram": {
+      "enabled": true,
+      "pointer_mode": "compact"
+    },
+    "obsidian": {
+      "enabled": true,
+      "vault_root": "notes",
+      "project_dir": "notes"
+    },
+    "graphify": {
+      "enabled": true,
+      "local_output_dir": "graphify-out"
+    },
+    "compact": {
+      "enabled": true,
+      "default_strategy": "compact-first",
+      "scenario_default": "focused-task"
+    }
+  }
+}

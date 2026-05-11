@@ -122,7 +122,21 @@ scripts\bootstrap.cmd --primary-agent opencode --install-gentle-ai --install-gra
 4. Let it copy the skill into the runtime if you passed `--install-skill`.
 5. Open your target repo in your AI client.
 6. Activate the skill during onboarding, architecture review, or `sdd-init`.
-7. Read cheap memory first, then open raw code only when needed.
+7. Read cheap memory first, prefer compact scenario/domain notes, and open raw code only when needed.
+
+### 4. Route context by task shape
+
+Use this default routing strategy:
+
+| Task shape | First context | Escalation |
+|---|---|---|
+| Focused bugfix / targeted feature | config + Engram pointer + compact scenario/domain notes | raw code |
+| Cross-module change | compact notes | full Graphify report |
+| Repo onboarding | compact notes | full Graphify report |
+| Architecture review | compact notes | full Graphify report |
+
+The important shift is simple: **Graphify full report is not the default starting point anymore**.
+It is the escalation path for broad structural work.
 
 ---
 
@@ -141,8 +155,9 @@ python3 scripts/benchmark_memory_savings.py \
 
 What it compares:
 
-- **baseline** → raw rediscovery files
-- **memory_first** → config + Graphify + durable notes
+- **baseline_raw_rediscovery** → raw files opened without memory
+- **memory_first_compact** → config + Engram pointer targets + compact notes
+- **memory_first_full_graph** → compact context plus full Graphify when breadth is needed
 
 What it reports:
 
@@ -153,9 +168,9 @@ What it reports:
 
 Interpretation:
 
-- if `memory_first` is significantly smaller, good
-- if it is similar, the bridge may not justify the complexity
-- if it is larger, do **not** use the setup as-is
+- if `memory_first_compact` is much smaller for focused tasks, the bridge is doing its main job
+- if `memory_first_full_graph` is still smaller than baseline for onboarding/review, Graphify remains justified for broad work
+- if full graph is used for focused tasks and loses badly to compact memory, that is expected and should be avoided
 
 Important limitation:
 
@@ -165,9 +180,9 @@ Important limitation:
 
 Recommended validation scenarios:
 
-1. repo onboarding
-2. architecture review
-3. planning / `sdd-init`
+1. focused task in one domain
+2. repo onboarding
+3. architecture review / cross-module planning
 
 If it does not improve those scenarios, the project is not delivering on its promise.
 

@@ -6,10 +6,11 @@ Medir si `project-memory-bridge` realmente reduce contexto leído frente a redes
 
 ## What this benchmark measures
 
-Este benchmark compara dos packs de contexto:
+Este benchmark compara tres packs de contexto:
 
-- **baseline**: archivos que el agente abriría sin memoria persistente
-- **memory_first**: archivos baratos que debería abrir primero con este proyecto
+- **baseline_raw_rediscovery**: archivos que el agente abriría sin memoria persistente
+- **memory_first_compact**: contexto barato y focalizado que debería abrir primero
+- **memory_first_full_graph**: contexto barato + Graphify completo cuando la tarea realmente necesita amplitud
 
 La salida compara:
 
@@ -17,6 +18,8 @@ La salida compara:
 - líneas totales
 - bytes totales
 - tokens estimados
+- ahorro porcentual contra baseline
+- overhead de full graph contra compacto
 
 ## Important limitation
 
@@ -37,23 +40,25 @@ python3 scripts/benchmark_memory_savings.py \
 
 ## How to interpret it
 
-- si `memory_first` usa claramente menos tokens que `baseline`, la estrategia va en la dirección correcta
-- si la diferencia es mínima, no vale la complejidad
-- si `memory_first` gasta más, la implementación está mal y NO conviene usarla así
+- si `memory_first_compact` usa claramente menos tokens que `baseline`, la estrategia va en la dirección correcta para tareas focalizadas
+- si `memory_first_full_graph` sigue siendo menor que `baseline`, Graphify completo sigue teniendo lugar para onboarding/review
+- si `memory_first_full_graph` pierde contra `memory_first_compact` en tareas focalizadas, NO es un bug: es la evidencia de que conviene arrancar compacto
 
 ## What to customize
 
 Editá `benchmarks/example-benchmark.json` para tu repo real:
 
-- `baseline`: qué abriría el agente sin puente de memoria
-- `memory_first`: qué leería primero con Graphify + Obsidian + config
+- `baseline_raw_rediscovery`: qué abriría el agente sin puente de memoria
+- `memory_first_compact`: qué leería primero con contexto compacto
+- `memory_first_full_graph`: qué leería cuando además necesita amplitud estructural
 
 ## Recommended validation
 
 Probalo al menos en 3 escenarios:
 
-1. onboarding de repo
-2. architecture review
-3. planning / `sdd-init`
+1. tarea focalizada en un dominio
+2. onboarding de repo
+3. architecture review
+4. cambio cross-module
 
 Si no mejora ahí, el proyecto no está cumpliendo su promesa.

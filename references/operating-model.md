@@ -47,13 +47,34 @@ Usalo después de cambios con conocimiento durable:
 - troubleshooting reusable
 - cambios estructurales del repo
 
-## Cheap read order
+## Context routing order
 
 1. `.atl/memory-config.json`
-2. Engram
-3. índice/estado actual en Obsidian
-4. reporte de Graphify
+2. Engram compact pointer
+3. notas compactas por escenario o dominio
+4. reporte completo de Graphify
 5. código puntual
+
+## Compact-first rule
+
+Para tareas focalizadas, la skill debe intentar resolver el contexto con **1 a 3 artefactos compactos** antes de abrir `GRAPH_REPORT.md`.
+
+Usá Graphify completo solo cuando pase al menos una de estas condiciones:
+
+- onboarding amplio del repo
+- architecture review
+- relaciones cross-module
+- la memoria compacta está vieja, ausente o insuficiente
+
+Si ninguna aplica, abrir el graph completo es gastar tokens de más.
+
+## Generic compact artifact shapes
+
+- **scenario summary**: una tarea típica completa en un área (`bugfix-auth-login`, `feature-billing-invoice-list`)
+- **domain summary**: mapa compacto de un dominio (`auth`, `billing`, `frontend-shell`)
+- **cross-module note**: relación entre dominios (`auth-billing`, `api-ui-contracts`)
+
+La skill no debe hardcodear nombres de repos. Debe depender de rutas y defaults declarados en `.atl/memory-config.json`.
 
 ## Non-goals
 
