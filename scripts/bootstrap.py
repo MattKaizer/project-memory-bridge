@@ -309,6 +309,8 @@ def main() -> None:
     else:
         log("Graphify deshabilitado por flag")
 
+    compact_routing_path = atl_dir / "compact-routing.json"
+
     log("Step 4: writing memory-config.json")
     config = {
         "project": {
@@ -342,32 +344,101 @@ def main() -> None:
                 "max_tokens_per_artifact": 400,
                 "max_artifacts_per_request": 3,
                 "auto_refresh_days": 7,
-                "scenarios": {
-                    "focused-task": {
-                        "preferred_sources": ["engram", "obsidian_compact", "raw_code"],
-                        "allow_graph_report": False,
-                        "target_token_budget": 1200,
-                    },
-                    "cross-module": {
-                        "preferred_sources": ["engram", "obsidian_compact", "graph_report", "raw_code"],
-                        "allow_graph_report": True,
-                        "target_token_budget": 2600,
-                    },
-                    "architecture-review": {
-                        "preferred_sources": ["engram", "obsidian_compact", "graph_report"],
-                        "allow_graph_report": True,
-                        "target_token_budget": 3200,
-                    },
-                    "repo-onboarding": {
-                        "preferred_sources": ["engram", "obsidian_compact", "graph_report"],
-                        "allow_graph_report": True,
-                        "target_token_budget": 3200,
-                    },
-                },
+                "routing_file": ".atl/compact-routing.json",
+                "router_note": "notes/00_Project_Index.md",
             },
         },
     }
     config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+
+    compact_routing = {
+        "default_first_read": ["memory_config", "engram_pointer", "project_index"],
+        "scenarios": {
+            "focused-task": {
+                "preferred_sources": ["engram", "obsidian_compact", "raw_code"],
+                "allow_graph_report": False,
+                "target_token_budget": 1200,
+                "first_read_pack": ["memory_config", "engram_pointer", "scenario_note", "domain_note"],
+                "escalation": {
+                    "compact_ok_when": [
+                        "the task stays inside one domain",
+                        "a scenario or domain note already answers the navigation question",
+                        "exact code-level verification is not yet required",
+                    ],
+                    "raw_code_when": [
+                        "exact implementation details, signatures, or contracts matter",
+                        "the compact note conflicts with the repository state",
+                        "you are verifying or editing code",
+                    ],
+                    "graph_when": [
+                        "cross-module relationships become necessary",
+                        "ownership remains ambiguous after compact notes",
+                    ],
+                },
+            },
+            "cross-module": {
+                "preferred_sources": ["engram", "obsidian_compact", "graph_report", "raw_code"],
+                "allow_graph_report": True,
+                "target_token_budget": 2600,
+                "first_read_pack": ["memory_config", "engram_pointer", "project_index", "cross_module_note"],
+                "escalation": {
+                    "compact_ok_when": [
+                        "the cross-module note already identifies the participating domains",
+                        "you only need a durable relationship summary before drilling deeper",
+                    ],
+                    "raw_code_when": [
+                        "you need exact APIs, payloads, migrations, or implementation details",
+                        "verification against current source is required",
+                    ],
+                    "graph_when": [
+                        "the task spans two or more modules and path reasoning matters",
+                        "the compact notes are stale, missing, or insufficient",
+                    ],
+                },
+            },
+            "architecture-review": {
+                "preferred_sources": ["engram", "obsidian_compact", "graph_report"],
+                "allow_graph_report": True,
+                "target_token_budget": 3200,
+                "first_read_pack": ["memory_config", "engram_pointer", "project_index", "domain_note"],
+                "escalation": {
+                    "compact_ok_when": [
+                        "the project index and domain notes already frame the review scope",
+                        "you are still forming the initial architecture map",
+                    ],
+                    "raw_code_when": [
+                        "claims need source verification",
+                        "review findings depend on exact implementation details",
+                    ],
+                    "graph_when": [
+                        "breadth matters more than token minimization",
+                        "module relationships or ownership boundaries need structural evidence",
+                    ],
+                },
+            },
+            "repo-onboarding": {
+                "preferred_sources": ["engram", "obsidian_compact", "graph_report"],
+                "allow_graph_report": True,
+                "target_token_budget": 3200,
+                "first_read_pack": ["memory_config", "engram_pointer", "project_index", "domain_note"],
+                "escalation": {
+                    "compact_ok_when": [
+                        "the project index plus one or two domain notes orient the first task",
+                        "the initial goal is local navigation, not full architecture mastery",
+                    ],
+                    "raw_code_when": [
+                        "you need concrete entrypoints, commands, or file-level behavior",
+                        "implementation details are required to make a change",
+                    ],
+                    "graph_when": [
+                        "the onboarding goal is broad repository understanding",
+                        "compact notes do not explain module boundaries clearly enough",
+                    ],
+                },
+            },
+        },
+    }
+    compact_routing_path.write_text(json.dumps(compact_routing, indent=2) + "\n", encoding="utf-8")
 
     if obsidian_enabled:
         log("Step 5: creating Obsidian directories and seed notes from config")

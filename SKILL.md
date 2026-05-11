@@ -24,8 +24,9 @@ Do not use it for tiny edits, one-file fixes, formatting, or conceptual question
 
 - Preserve normal Engram behavior. Never replace, suppress, or redefine it.
 - Read `.atl/memory-config.json` first when the skill activates.
+- Use `.atl/compact-routing.json` as the truth source for scenario budgets and escalation order.
 - Default to **compact-first context routing**, not Graphify-first.
-- Use the context pyramid: config -> Engram pointer -> compact notes -> full graph -> raw code.
+- Use the context pyramid: manifest -> Engram pointer -> project router -> compact notes -> full graph -> raw code.
 - Store only compact Graphify/Obsidian pointers in Engram; large reports stay in files.
 - Run Graphify only for onboarding, stale structure, architecture-heavy work, or verified cross-module needs.
 - Treat source code as the final authority when exact implementation details matter.
@@ -34,23 +35,23 @@ Do not use it for tiny edits, one-file fixes, formatting, or conceptual question
 
 | Level | Source | Use it for | Default token posture |
 |---|---|---|---|
-| L0 | `.atl/memory-config.json` | routing, paths, scenario defaults, budgets | tiny |
+| L0 | `.atl/memory-config.json` | project identity, enabled layers, pointer paths | tiny |
 | L1 | Engram compact pointer | decide which compact artifact to open | tiny |
-| L2 | compact scenario/domain notes | focused tasks, localized debugging, targeted edits | cheap |
+| L2 | `notes/00_Project_Index.md` + compact scenario/domain notes | cheap navigation before deeper reads | cheap |
 | L3 | `graphify-out/GRAPH_REPORT.md` | onboarding, architecture review, cross-module relationships | expensive |
 | L4 | raw code/docs | exact implementation details, verification | variable |
 
-Never jump to L3 if L2 can answer the task.
+Never jump to L3 if L2 can answer the task. Stop after the smallest first-read pack that explains where to go next.
 
 ## Scenario Router
 
-| Task shape | Preferred route | Graph report allowed? |
+| Task shape | First-read pack | Escalation default |
 |---|---|---|
-| Focused bugfix / feature in one domain | L0 -> L1 -> L2 -> L4 | No by default |
-| Planning inside one bounded area | L0 -> L1 -> L2 -> L4 | Only if compact context is stale or insufficient |
-| Cross-module change | L0 -> L1 -> L2 -> L3 -> L4 | Yes |
-| Repo onboarding | L0 -> L1 -> L2 -> L3 | Yes |
-| Architecture review | L0 -> L1 -> L2 -> L3 -> L4 | Yes |
+| Focused bugfix / feature in one domain | L0 -> L1 -> scenario/domain note | raw code |
+| Planning inside one bounded area | L0 -> L1 -> project index -> domain note | raw code |
+| Cross-module change | L0 -> L1 -> project index -> cross-module note | graph, then raw code |
+| Repo onboarding | L0 -> L1 -> project index -> 1-2 domain notes | graph if breadth remains unclear |
+| Architecture review | L0 -> L1 -> project index -> domain notes | graph, then raw code if claims need proof |
 
 ## Compact Pointer Contract
 
@@ -65,16 +66,43 @@ recommended_notes:
 cross_module_note: notes/30_Cross_Module/<relationship>.md
 graph_report: graphify-out/GRAPH_REPORT.md
 graph_report_required: true|false
+remaining_budget_hint: <integer>
 ```
 
 The pointer should help the agent open **1-3 cheap artifacts first**.
 It should not inline long note bodies or the full graph report.
 
+## Escalation Rubric
+
+### Compact OK
+
+Stay in compact memory when ALL are true:
+
+- the task remains inside one domain or one already-mapped relationship
+- the compact note answers the navigation question
+- exact code-level verification is not yet needed
+
+### Escalate to raw code
+
+Open raw code when ANY are true:
+
+- exact implementation details, signatures, or contracts matter
+- you are verifying a fix or planning an edit
+- compact memory conflicts with current repository state
+
+### Escalate to full graph
+
+Open the full graph when ANY are true:
+
+- the task spans multiple modules and path reasoning matters
+- onboarding or architecture breadth is the goal
+- compact notes are stale, missing, or insufficient after the first-read pack
+
 ## Decision Gates
 
 | Situation | Action |
 |---|---|
-| `.atl/memory-config.json` missing during init/onboarding/review | Bootstrap memory config and note structure |
+| `.atl/memory-config.json` or `.atl/compact-routing.json` missing during init/onboarding/review | Bootstrap memory config and note structure |
 | Compact notes missing, stale, or placeholder-only | Hydrate compact scenario/domain notes before using Graphify as default |
 | Normal focused implementation task with ready memory | Consume compact memory first, avoid Graphify unless proven necessary |
 | Cross-module / architecture-heavy task | Reuse compact context first, then allow full Graphify |
@@ -83,13 +111,14 @@ It should not inline long note bodies or the full graph report.
 ## Execution Steps
 
 1. Read `.atl/memory-config.json`.
-2. Determine mode: `bootstrap`, `hydrate`, `consume`, or `update`.
-3. Resolve the task scenario from config or task shape.
-4. Open the cheapest viable artifacts first: config -> Engram pointer -> compact scenario/domain notes.
-5. Escalate to `graphify-out/GRAPH_REPORT.md` only if the scenario explicitly allows it or compact context proves insufficient.
-6. Open raw code only for verification or exact implementation details.
-7. If durable knowledge changed, update only the relevant compact notes and add a compact Engram pointer.
-8. Return: active mode, scenario, current state, what was created/updated, what was skipped, and why.
+2. Read `.atl/compact-routing.json`.
+3. Determine mode: `bootstrap`, `hydrate`, `consume`, or `update`.
+4. Resolve the task scenario from routing config or task shape.
+5. Open only the smallest first-read pack declared for that scenario.
+6. Escalate to `graphify-out/GRAPH_REPORT.md` only if the scenario allows it and the escalation rubric is triggered.
+7. Open raw code only for verification or exact implementation details.
+8. If durable knowledge changed, update only the relevant compact notes and add a compact Engram pointer.
+9. Return: active mode, scenario, current state, what was created/updated, what was skipped, and why.
 
 ## Output Contract
 
@@ -108,5 +137,6 @@ Return:
 
 - `README.md` — repo overview, installation, and usage
 - `assets/memory-config.schema.json` — canonical lightweight config schema
+- `assets/compact-routing.schema.json` — canonical routing and escalation schema
 - `references/operating-model.md` — bootstrap/hydrate/consume/update behavior
 - `references/obsidian-templates.md` — recommended note layout and starter templates

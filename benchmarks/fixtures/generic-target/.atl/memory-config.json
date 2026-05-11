@@ -20,7 +20,9 @@
     "compact": {
       "enabled": true,
       "default_strategy": "compact-first",
-      "scenario_default": "focused-task"
+      "scenario_default": "focused-task",
+      "routing_file": ".atl/compact-routing.json",
+      "router_note": "notes/00_Project_Index.md"
     }
   }
 }

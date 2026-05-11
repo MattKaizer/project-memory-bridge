@@ -130,10 +130,10 @@ Use this default routing strategy:
 
 | Task shape | First context | Escalation |
 |---|---|---|
-| Focused bugfix / targeted feature | config + Engram pointer + compact scenario/domain notes | raw code |
-| Cross-module change | compact notes | full Graphify report |
-| Repo onboarding | compact notes | full Graphify report |
-| Architecture review | compact notes | full Graphify report |
+| Focused bugfix / targeted feature | manifest + Engram pointer + one scenario/domain note | raw code |
+| Cross-module change | manifest + project index + cross-module note | full Graphify report |
+| Repo onboarding | manifest + project index + 1-2 domain notes | full Graphify report |
+| Architecture review | manifest + project index + domain notes | full Graphify report |
 
 The important shift is simple: **Graphify full report is not the default starting point anymore**.
 It is the escalation path for broad structural work.
@@ -156,6 +156,7 @@ python3 scripts/benchmark_memory_savings.py \
 What it compares:
 
 - **baseline_raw_rediscovery** → raw files opened without memory
+- **compact_first_load** → the smallest generic pack that should orient the task
 - **memory_first_compact** → config + Engram pointer targets + compact notes
 - **memory_first_full_graph** → compact context plus full Graphify when breadth is needed
 
@@ -169,6 +170,7 @@ What it reports:
 Interpretation:
 
 - if `memory_first_compact` is much smaller for focused tasks, the bridge is doing its main job
+- if `compact_first_load` is clearly smaller than the old compact pack and still orients the task, the bridge got cheaper without going blind
 - if `memory_first_full_graph` is still smaller than baseline for onboarding/review, Graphify remains justified for broad work
 - if full graph is used for focused tasks and loses badly to compact memory, that is expected and should be avoided
 

@@ -50,14 +50,22 @@ Usalo después de cambios con conocimiento durable:
 ## Context routing order
 
 1. `.atl/memory-config.json`
-2. Engram compact pointer
-3. notas compactas por escenario o dominio
-4. reporte completo de Graphify
-5. código puntual
+2. `.atl/compact-routing.json`
+3. Engram compact pointer
+4. `notes/00_Project_Index.md`
+5. notas compactas por escenario o dominio
+6. reporte completo de Graphify
+7. código puntual
 
 ## Compact-first rule
 
 Para tareas focalizadas, la skill debe intentar resolver el contexto con **1 a 3 artefactos compactos** antes de abrir `GRAPH_REPORT.md`.
+
+El first-load genérico recomendado es:
+
+1. manifest mínimo (`.atl/memory-config.json`)
+2. puntero compacto de Engram
+3. router humano (`notes/00_Project_Index.md`) o la nota de escenario/dominio más barata
 
 Usá Graphify completo solo cuando pase al menos una de estas condiciones:
 
@@ -67,6 +75,26 @@ Usá Graphify completo solo cuando pase al menos una de estas condiciones:
 - la memoria compacta está vieja, ausente o insuficiente
 
 Si ninguna aplica, abrir el graph completo es gastar tokens de más.
+
+## Escalation rubric
+
+### Compact OK
+
+- la tarea sigue dentro de un dominio o relación ya resumida
+- la nota compacta responde qué abrir después
+- todavía no hace falta verificar implementación exacta
+
+### Escalar a código crudo
+
+- necesitás firmas, contratos, payloads o comportamiento exacto
+- vas a editar o verificar código
+- la memoria compacta contradice el repo actual
+
+### Escalar a graph completo
+
+- importan relaciones entre múltiples módulos
+- el objetivo es onboarding amplio o architecture review
+- el pack compacto quedó corto incluso después del first-load
 
 ## Generic compact artifact shapes
 

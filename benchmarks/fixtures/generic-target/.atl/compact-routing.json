@@ -1,0 +1,41 @@
+{
+  "default_first_read": ["memory_config", "engram_pointer", "project_index"],
+  "scenarios": {
+    "focused-task": {
+      "preferred_sources": ["engram", "obsidian_compact", "raw_code"],
+      "allow_graph_report": false,
+      "target_token_budget": 1200,
+      "first_read_pack": ["memory_config", "engram_pointer", "scenario_note", "domain_note"],
+      "escalation": {
+        "compact_ok_when": [
+          "the task stays inside one domain",
+          "the compact note already explains where to go next"
+        ],
+        "raw_code_when": [
+          "exact implementation details or contracts matter",
+          "you are verifying or changing code"
+        ],
+        "graph_when": [
+          "cross-module reasoning becomes necessary"
+        ]
+      }
+    },
+    "architecture-review": {
+      "preferred_sources": ["engram", "obsidian_compact", "graph_report"],
+      "allow_graph_report": true,
+      "target_token_budget": 3200,
+      "first_read_pack": ["memory_config", "engram_pointer", "project_index", "cross_module_note"],
+      "escalation": {
+        "compact_ok_when": [
+          "the project index and relationship note frame the review scope"
+        ],
+        "raw_code_when": [
+          "claims need line-level validation"
+        ],
+        "graph_when": [
+          "module breadth or path reasoning matters more than token minimization"
+        ]
+      }
+    }
+  }
+}

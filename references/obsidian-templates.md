@@ -104,8 +104,22 @@ status: active
 - architecture breadth matters more than token minimization
 ```
 
+## Compact router note
+
+`00_Project_Index.md` debe funcionar como router humano barato:
+
+- dominios disponibles
+- qué nota abrir primero según task shape
+- cuándo alcanza compacto
+- cuándo escalar a código crudo
+- cuándo escalar a graph completo
+
+Si ese router supera el costo de una nota compacta normal, se volvió demasiado verboso.
+
 ## Bootstrap alignment
 
 El bootstrap actual crea tanto la estructura histórica (`01_Architecture`, `04_Decisions`, `05_Troubleshooting`) como las carpetas compactas (`10_Scenarios`, `20_Domains`, `30_Cross_Module`).
 
 No son alternativas: conviven. Las carpetas compactas existen para ahorrar tokens en tareas focalizadas.
+
+Si una nota compacta supera `max_tokens_per_artifact`, dividila por escenario, subdominio o relación antes de seguir agregando contenido.

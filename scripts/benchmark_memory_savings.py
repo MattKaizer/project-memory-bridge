@@ -77,6 +77,16 @@ def print_summary(name: str, summary: dict[str, int]) -> None:
     )
 
 
+def infer_escalation_tier(scenario: dict) -> str:
+    full_graph_patterns = resolve_scenario_patterns(scenario, "memory_first_full_graph", "memory_first")
+    if scenario.get("expected_tier") == "graph_required" and any("GRAPH_REPORT" in pattern for pattern in full_graph_patterns):
+        return "graph_required"
+    compact_patterns = resolve_scenario_patterns(scenario, "memory_first_compact")
+    if compact_patterns:
+        return "raw_code_required"
+    return "compact_ok"
+
+
 def percent_savings(reference: int, candidate: int) -> float:
     if reference == 0:
         return 0.0
@@ -111,46 +121,63 @@ def main() -> None:
     for scenario in scenarios:
         name = scenario["name"]
         baseline_patterns = resolve_scenario_patterns(scenario, "baseline_raw_rediscovery", "baseline")
+        first_load_patterns = resolve_scenario_patterns(scenario, "compact_first_load")
         compact_patterns = resolve_scenario_patterns(scenario, "memory_first_compact")
         full_graph_patterns = resolve_scenario_patterns(scenario, "memory_first_full_graph", "memory_first")
 
         if not baseline_patterns:
             raise SystemExit(f"[benchmark] ERROR: scenario '{name}' has no baseline_raw_rediscovery patterns")
+        if not first_load_patterns:
+            raise SystemExit(f"[benchmark] ERROR: scenario '{name}' has no compact_first_load patterns")
         if not compact_patterns:
             raise SystemExit(f"[benchmark] ERROR: scenario '{name}' has no memory_first_compact patterns")
         if not full_graph_patterns:
             raise SystemExit(f"[benchmark] ERROR: scenario '{name}' has no memory_first_full_graph patterns")
 
+        first_load_files = measure_files(resolve_patterns(repo_root, first_load_patterns), repo_root)
         baseline_files = measure_files(resolve_patterns(repo_root, baseline_patterns), repo_root)
         compact_files = measure_files(resolve_patterns(repo_root, compact_patterns), repo_root)
         full_graph_files = measure_files(resolve_patterns(repo_root, full_graph_patterns), repo_root)
 
+        first_load = summarize(first_load_files)
         baseline = summarize(baseline_files)
         compact = summarize(compact_files)
         full_graph = summarize(full_graph_files)
 
+        first_load_saved = baseline["tokens"] - first_load["tokens"]
         compact_saved = baseline["tokens"] - compact["tokens"]
         full_graph_saved = baseline["tokens"] - full_graph["tokens"]
+        first_load_percent = percent_savings(baseline["tokens"], first_load["tokens"])
         compact_percent = percent_savings(baseline["tokens"], compact["tokens"])
         full_graph_percent = percent_savings(baseline["tokens"], full_graph["tokens"])
         full_graph_overhead = full_graph["tokens"] - compact["tokens"]
         overhead_percent = percent_savings(full_graph["tokens"], compact["tokens"])
         budgets = scenario.get("budgets", {})
+        expected_tier = scenario.get("expected_tier", "raw_code_required")
+        observed_tier = infer_escalation_tier(scenario)
 
         print(f"\n## Scenario: {name}")
         if scenario.get("intent"):
             print(f"intent={scenario['intent']}")
+        print_summary("compact_first_load", first_load)
         print_summary("baseline_raw_rediscovery", baseline)
         print_summary("memory_first_compact", compact)
         print_summary("memory_first_full_graph", full_graph)
+        print(f"first_load_delta_tokens={first_load_saved} first_load_savings_percent={first_load_percent:.2f}")
         print(f"compact_delta_tokens={compact_saved} compact_savings_percent={compact_percent:.2f}")
         print(f"full_graph_delta_tokens={full_graph_saved} full_graph_savings_percent={full_graph_percent:.2f}")
         print(
             f"full_graph_over_compact_tokens={full_graph_overhead} compact_advantage_vs_full_graph_percent={overhead_percent:.2f}"
         )
+        print(
+            f"escalation_tier_check={'PASS' if observed_tier == expected_tier else 'FAIL'} expected={expected_tier} observed={observed_tier}"
+        )
 
+        first_load_budget = budgets.get("compact_first_load_max_tokens")
         compact_budget = budgets.get("compact_max_tokens")
         full_graph_budget = budgets.get("full_graph_max_tokens")
+        if first_load_budget is not None:
+            print(f"compact_first_load_budget_check={'PASS' if first_load['tokens'] <= first_load_budget else 'FAIL'} limit={first_load_budget}")
         if compact_budget is not None:
             print(f"compact_budget_check={'PASS' if compact['tokens'] <= compact_budget else 'FAIL'} limit={compact_budget}")
         if full_graph_budget is not None:
@@ -161,6 +188,9 @@ def main() -> None:
         if args.details:
             print("\n### baseline files")
             for item in baseline_files:
+                print(f"- {item.path}: {item.token_count} tokens")
+            print("\n### compact first-load files")
+            for item in first_load_files:
                 print(f"- {item.path}: {item.token_count} tokens")
             print("\n### compact files")
             for item in compact_files:

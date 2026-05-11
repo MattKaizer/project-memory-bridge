@@ -3,11 +3,16 @@
     {
       "name": "focused-task-auth",
       "intent": "Local bugfix or feature inside one domain",
+      "expected_tier": "raw_code_required",
       "baseline_raw_rediscovery": [
         "raw/README.md",
         "raw/docs/auth-debugging.md",
         "raw/src/auth/**/*.ts",
         "raw/src/shared/**/*.ts"
+      ],
+      "compact_first_load": [
+        ".atl/memory-config.json",
+        "notes/10_Scenarios/focused-task-auth.md"
       ],
       "memory_first_compact": [
         ".atl/memory-config.json",
@@ -21,6 +26,7 @@
         "graphify-out/GRAPH_REPORT.md"
       ],
       "budgets": {
+        "compact_first_load_max_tokens": 700,
         "compact_max_tokens": 1200,
         "full_graph_max_tokens": 2600
       }
@@ -28,10 +34,16 @@
     {
       "name": "architecture-review-cross-module",
       "intent": "Broad architecture review with auth + billing relationships",
+      "expected_tier": "graph_required",
       "baseline_raw_rediscovery": [
         "raw/README.md",
         "raw/docs/**/*.md",
         "raw/src/**/*.ts"
+      ],
+      "compact_first_load": [
+        ".atl/memory-config.json",
+        "notes/00_Project_Index.md",
+        "notes/30_Cross_Module/auth-billing.md"
       ],
       "memory_first_compact": [
         ".atl/memory-config.json",
@@ -50,6 +62,7 @@
         "notes/03_Architecture_Summary.md"
       ],
       "budgets": {
+        "compact_first_load_max_tokens": 800,
         "compact_max_tokens": 1400,
         "full_graph_max_tokens": 3200
       }

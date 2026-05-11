@@ -76,26 +76,13 @@
               "minimum": 1,
               "default": 7
             },
-            "scenarios": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "object",
-                "properties": {
-                  "preferred_sources": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "enum": ["engram", "obsidian_compact", "graph_report", "raw_code"]
-                    }
-                  },
-                  "allow_graph_report": { "type": "boolean", "default": false },
-                  "target_token_budget": {
-                    "type": "integer",
-                    "minimum": 100,
-                    "default": 1200
-                  }
-                }
-              }
+            "routing_file": {
+              "type": "string",
+              "default": ".atl/compact-routing.json"
+            },
+            "router_note": {
+              "type": "string",
+              "default": "notes/00_Project_Index.md"
             }
           }
         }

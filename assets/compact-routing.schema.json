@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/project-memory-bridge/compact-routing.schema.json",
+  "title": "Project Memory Bridge Compact Routing",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["default_first_read", "scenarios"],
+  "properties": {
+    "default_first_read": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": ["memory_config", "engram_pointer", "project_index", "scenario_note", "domain_note", "cross_module_note"]
+      }
+    },
+    "scenarios": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["preferred_sources", "target_token_budget", "first_read_pack", "escalation"],
+        "properties": {
+          "preferred_sources": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["engram", "obsidian_compact", "graph_report", "raw_code"]
+            }
+          },
+          "allow_graph_report": { "type": "boolean", "default": false },
+          "target_token_budget": {
+            "type": "integer",
+            "minimum": 100,
+            "default": 1200
+          },
+          "first_read_pack": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "enum": ["memory_config", "engram_pointer", "project_index", "scenario_note", "domain_note", "cross_module_note"]
+            }
+          },
+          "escalation": {
+            "type": "object",
+            "required": ["compact_ok_when", "raw_code_when", "graph_when"],
+            "properties": {
+              "compact_ok_when": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "raw_code_when": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "graph_when": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
