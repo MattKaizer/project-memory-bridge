@@ -47,6 +47,57 @@
             "install_if_missing": { "type": "boolean", "default": false },
             "force_graphify_on_init": { "type": "boolean", "default": false }
           }
+        },
+        "compact": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "default_strategy": {
+              "type": "string",
+              "enum": ["compact-first", "graph-first"],
+              "default": "compact-first"
+            },
+            "scenario_default": {
+              "type": "string",
+              "default": "focused-task"
+            },
+            "max_tokens_per_artifact": {
+              "type": "integer",
+              "minimum": 100,
+              "default": 400
+            },
+            "max_artifacts_per_request": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 3
+            },
+            "auto_refresh_days": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 7
+            },
+            "scenarios": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "preferred_sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["engram", "obsidian_compact", "graph_report", "raw_code"]
+                    }
+                  },
+                  "allow_graph_report": { "type": "boolean", "default": false },
+                  "target_token_budget": {
+                    "type": "integer",
+                    "minimum": 100,
+                    "default": 1200
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }

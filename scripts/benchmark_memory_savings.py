@@ -77,6 +77,19 @@ def print_summary(name: str, summary: dict[str, int]) -> None:
     )
 
 
+def percent_savings(reference: int, candidate: int) -> float:
+    if reference == 0:
+        return 0.0
+    return ((reference - candidate) / reference) * 100
+
+
+def resolve_scenario_patterns(scenario: dict, key: str, legacy_fallback: str | None = None) -> list[str]:
+    values = scenario.get(key)
+    if values is None and legacy_fallback is not None:
+        values = scenario.get(legacy_fallback, [])
+    return list(values or [])
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Benchmark Project Memory Bridge token savings")
     parser.add_argument("--repo-root", required=True, help="Repository to benchmark")
@@ -97,29 +110,63 @@ def main() -> None:
 
     for scenario in scenarios:
         name = scenario["name"]
-        baseline_patterns = scenario.get("baseline", [])
-        memory_patterns = scenario.get("memory_first", [])
+        baseline_patterns = resolve_scenario_patterns(scenario, "baseline_raw_rediscovery", "baseline")
+        compact_patterns = resolve_scenario_patterns(scenario, "memory_first_compact")
+        full_graph_patterns = resolve_scenario_patterns(scenario, "memory_first_full_graph", "memory_first")
+
+        if not baseline_patterns:
+            raise SystemExit(f"[benchmark] ERROR: scenario '{name}' has no baseline_raw_rediscovery patterns")
+        if not compact_patterns:
+            raise SystemExit(f"[benchmark] ERROR: scenario '{name}' has no memory_first_compact patterns")
+        if not full_graph_patterns:
+            raise SystemExit(f"[benchmark] ERROR: scenario '{name}' has no memory_first_full_graph patterns")
 
         baseline_files = measure_files(resolve_patterns(repo_root, baseline_patterns), repo_root)
-        memory_files = measure_files(resolve_patterns(repo_root, memory_patterns), repo_root)
+        compact_files = measure_files(resolve_patterns(repo_root, compact_patterns), repo_root)
+        full_graph_files = measure_files(resolve_patterns(repo_root, full_graph_patterns), repo_root)
 
         baseline = summarize(baseline_files)
-        memory = summarize(memory_files)
+        compact = summarize(compact_files)
+        full_graph = summarize(full_graph_files)
 
-        saved = baseline["tokens"] - memory["tokens"]
-        percent = 0.0 if baseline["tokens"] == 0 else (saved / baseline["tokens"]) * 100
+        compact_saved = baseline["tokens"] - compact["tokens"]
+        full_graph_saved = baseline["tokens"] - full_graph["tokens"]
+        compact_percent = percent_savings(baseline["tokens"], compact["tokens"])
+        full_graph_percent = percent_savings(baseline["tokens"], full_graph["tokens"])
+        full_graph_overhead = full_graph["tokens"] - compact["tokens"]
+        overhead_percent = percent_savings(full_graph["tokens"], compact["tokens"])
+        budgets = scenario.get("budgets", {})
 
         print(f"\n## Scenario: {name}")
-        print_summary("baseline", baseline)
-        print_summary("memory_first", memory)
-        print(f"delta_tokens={saved} savings_percent={percent:.2f}")
+        if scenario.get("intent"):
+            print(f"intent={scenario['intent']}")
+        print_summary("baseline_raw_rediscovery", baseline)
+        print_summary("memory_first_compact", compact)
+        print_summary("memory_first_full_graph", full_graph)
+        print(f"compact_delta_tokens={compact_saved} compact_savings_percent={compact_percent:.2f}")
+        print(f"full_graph_delta_tokens={full_graph_saved} full_graph_savings_percent={full_graph_percent:.2f}")
+        print(
+            f"full_graph_over_compact_tokens={full_graph_overhead} compact_advantage_vs_full_graph_percent={overhead_percent:.2f}"
+        )
+
+        compact_budget = budgets.get("compact_max_tokens")
+        full_graph_budget = budgets.get("full_graph_max_tokens")
+        if compact_budget is not None:
+            print(f"compact_budget_check={'PASS' if compact['tokens'] <= compact_budget else 'FAIL'} limit={compact_budget}")
+        if full_graph_budget is not None:
+            print(
+                f"full_graph_budget_check={'PASS' if full_graph['tokens'] <= full_graph_budget else 'FAIL'} limit={full_graph_budget}"
+            )
 
         if args.details:
             print("\n### baseline files")
             for item in baseline_files:
                 print(f"- {item.path}: {item.token_count} tokens")
-            print("\n### memory-first files")
-            for item in memory_files:
+            print("\n### compact files")
+            for item in compact_files:
+                print(f"- {item.path}: {item.token_count} tokens")
+            print("\n### full-graph files")
+            for item in full_graph_files:
                 print(f"- {item.path}: {item.token_count} tokens")
 
 

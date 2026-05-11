@@ -230,6 +230,21 @@ def install_skill(skill_repo_root: Path, destination_root: Path) -> Path:
     if readme_src.exists():
         shutil.copy2(readme_src, skill_target / "README.md")
 
+    for folder_name in ("docs", "benchmarks"):
+        src = skill_repo_root / folder_name
+        if not src.exists():
+            continue
+        dst = skill_target / folder_name
+        if dst.exists():
+            shutil.rmtree(dst)
+        shutil.copytree(src, dst)
+
+    benchmark_src = skill_repo_root / "scripts" / "benchmark_memory_savings.py"
+    benchmark_dst_dir = skill_target / "scripts"
+    benchmark_dst_dir.mkdir(parents=True, exist_ok=True)
+    if benchmark_src.exists():
+        shutil.copy2(benchmark_src, benchmark_dst_dir / "benchmark_memory_savings.py")
+
     return skill_target
 
 
@@ -316,6 +331,36 @@ def main() -> None:
                 "install_if_missing": args.install_graphify,
                 "force_graphify_on_init": run_graphify_update,
             },
+            "compact": {
+                "enabled": True,
+                "default_strategy": "compact-first",
+                "scenario_default": "focused-task",
+                "max_tokens_per_artifact": 400,
+                "max_artifacts_per_request": 3,
+                "auto_refresh_days": 7,
+                "scenarios": {
+                    "focused-task": {
+                        "preferred_sources": ["engram", "obsidian_compact", "raw_code"],
+                        "allow_graph_report": False,
+                        "target_token_budget": 1200,
+                    },
+                    "cross-module": {
+                        "preferred_sources": ["engram", "obsidian_compact", "graph_report", "raw_code"],
+                        "allow_graph_report": True,
+                        "target_token_budget": 2600,
+                    },
+                    "architecture-review": {
+                        "preferred_sources": ["engram", "obsidian_compact", "graph_report"],
+                        "allow_graph_report": True,
+                        "target_token_budget": 3200,
+                    },
+                    "repo-onboarding": {
+                        "preferred_sources": ["engram", "obsidian_compact", "graph_report"],
+                        "allow_graph_report": True,
+                        "target_token_budget": 3200,
+                    },
+                },
+            },
         },
     }
     config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
@@ -326,6 +371,9 @@ def main() -> None:
             project_dir,
             project_dir / "01_Architecture",
             project_dir / "02_Graphify",
+            project_dir / "10_Scenarios",
+            project_dir / "20_Domains",
+            project_dir / "30_Cross_Module",
             project_dir / "04_Decisions",
             project_dir / "05_Troubleshooting",
         ]:
@@ -338,6 +386,9 @@ def main() -> None:
             project_dir / "03_Architecture_Summary.md": "Architecture Summary",
             project_dir / "04_Conventions.md": "Conventions",
             project_dir / "05_Active_Work.md": "Active Work",
+            project_dir / "10_Scenarios" / "focused-task-example.md": "Focused Task Example",
+            project_dir / "20_Domains" / "domain-example.md": "Domain Example",
+            project_dir / "30_Cross_Module" / "relation-example.md": "Cross Module Relation Example",
             project_dir / "01_Architecture" / "Architecture_Index.md": "Architecture Index",
             project_dir / "04_Decisions" / "Decisions_Index.md": "Decisions Index",
             project_dir / "05_Troubleshooting" / "Troubleshooting_Index.md": "Troubleshooting Index",
